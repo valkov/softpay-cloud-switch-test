@@ -4,12 +4,13 @@ const logEl = $('softpay_log');
 const log = m => { logEl.textContent += (typeof m === 'string' ? m : JSON.stringify(m)) + '\n'; };
 
 // Inputs are remembered in localStorage on this device only (never in the repo).
-const FIELDS = ['cid', 'sec', 'mref', 'appid', 'amount', 'cur', 'authurl', 'api', 'pkg'];
+const FIELDS = ['cid', 'sec', 'mref', 'appid', 'amount', 'cur', 'authurl', 'pkg'];
 for (const f of FIELDS) {
   try { const v = localStorage.getItem('sp_' + f); if (v) $(f).value = v; } catch (e) {}
   $(f).addEventListener('input', () => { try { localStorage.setItem('sp_' + f, $(f).value); } catch (e) {} });
 }
 
+try { localStorage.removeItem('sp_api'); } catch (e) {}   // the API base is never remembered, so an old saved version cannot linger
 let token = null, tokenExp = 0, client = null;
 const last = () => { try { return localStorage.getItem('sp_last'); } catch (e) { return null; } };
 
@@ -20,8 +21,8 @@ function makeClient() {
     callback: '#',                                // same tab, hash callback (Chrome)
     fallback: false,
     log: true,
-    onSuccess: (c, r) => { log(['onSuccess', r]); const id = r.requestId || last(); if (id) check(id); },
-    onFailure: (c, r, f) => { log(['onFailure', f && f.code, f && f.message, r]); const id = r.requestId || last(); if (id) check(id); },
+    onSuccess: (c, r) => { log(['onSuccess', r]); if (r.action === 'pending') { const id = r.requestId || last(); if (id) check(id); } },
+    onFailure: (c, r, f) => { log(['onFailure', f && f.code, f && f.message, r]); if (r.action === 'pending') { const id = r.requestId || last(); if (id) check(id); } },
   });
 }
 
@@ -39,10 +40,10 @@ async function bearer() {
   return token;
 }
 
-async function api(method, path, body) {
+async function api(method, path, body, noMerchant) {
   const headers = { 'Authorization': 'Bearer ' + await bearer(), 'Content-Type': 'application/json' };
   const mref = $('mref').value.trim();
-  if (mref) headers['X-Softpay-Merchant-Reference'] = mref;
+  if (mref && !noMerchant) headers['X-Softpay-Merchant-Reference'] = mref;
   const res = await fetch($('api').value.trim() + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
   const text = await res.text();
   if (!res.ok) throw new Error(method + ' ' + path + ' ' + res.status + ' ' + text);
@@ -88,12 +89,16 @@ $('pay').addEventListener('click', async () => {
 
 $('getapp').addEventListener('click', () => { makeClient(); client.processAppId(); });
 $('check').addEventListener('click', () => check());
+$('merchants').addEventListener('click', async () => {
+  try { log(['merchants', await api('GET', '/merchants', null, true)]); }
+  catch (e) { log('merchants failed: ' + e.message); }
+});
 $('stores').addEventListener('click', async () => {
   try { log(['stores', await api('GET', '/stores')]); }
   catch (e) { log('stores failed: ' + e.message); }
 });
 
-window.addEventListener('load', () => { makeClient(); log('ready, build 4, client v' + Softpay.version.major + '.' + Softpay.version.minor); });
+window.addEventListener('load', () => { makeClient(); log('ready, build 8, client v' + Softpay.version.major + '.' + Softpay.version.minor); });
 // Show app id when the app returns it.
 window.addEventListener('hashchange', () => log('callback: ' + location.hash));
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});

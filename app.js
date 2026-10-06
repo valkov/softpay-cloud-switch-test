@@ -93,12 +93,20 @@ $('merchants').addEventListener('click', async () => {
   try { log(['merchants', await api('GET', '/merchants', null, true)]); }
   catch (e) { log('merchants failed: ' + e.message); }
 });
+$('terminals').addEventListener('click', async () => {
+  try {
+    const stores = await api('GET', '/stores');
+    for (const st of (stores.content || stores)) {
+      log(['terminals of store', st.id, st.name, await api('GET', '/stores/' + st.id + '/terminals')]);
+    }
+  } catch (e) { log('terminals failed: ' + e.message); }
+});
 $('stores').addEventListener('click', async () => {
   try { log(['stores', await api('GET', '/stores')]); }
   catch (e) { log('stores failed: ' + e.message); }
 });
 
-window.addEventListener('load', () => { makeClient(); log('ready, build 8, client v' + Softpay.version.major + '.' + Softpay.version.minor); });
+window.addEventListener('load', () => { makeClient(); log('ready, build 9, client v' + Softpay.version.major + '.' + Softpay.version.minor); });
 // Show app id when the app returns it.
 window.addEventListener('hashchange', () => log('callback: ' + location.hash));
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});

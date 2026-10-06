@@ -93,7 +93,7 @@ $('stores').addEventListener('click', async () => {
   catch (e) { log('stores failed: ' + e.message); }
 });
 
-window.addEventListener('load', () => { makeClient(); log('ready, client v' + Softpay.version.major + '.' + Softpay.version.minor); });
+window.addEventListener('load', () => { makeClient(); log('ready, build 4, client v' + Softpay.version.major + '.' + Softpay.version.minor); });
 // Show app id when the app returns it.
 window.addEventListener('hashchange', () => log('callback: ' + location.hash));
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});

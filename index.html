@@ -23,7 +23,7 @@
 
 <label>Cloud API client id</label><input id="cid" autocomplete="off" autocapitalize="off">
 <label>Cloud API client secret</label><input id="sec" type="password" autocomplete="off">
-<label>Merchant reference (UUID, optional)</label><input id="mref" autocomplete="off">
+<label>Merchant reference (UUID, the "Merchant" field of the test client)</label><input id="mref" autocomplete="off">
 <label>App id (e.g. ABC1234567890)</label><input id="appid" autocomplete="off" autocapitalize="characters">
 <button id="getapp" type="button">Get app id from the app (switches there and back)</button>
 <label>Amount (minor units)</label><input id="amount" inputmode="numeric" value="100">
@@ -31,7 +31,7 @@
 
 <details><summary>Advanced</summary>
 <label>Auth URL</label><input id="authurl" value="https://auth.sandbox.softpay.io/oauth2/token">
-<label>API base</label><input id="api" value="https://api.sandbox.softpay.io/api-gateway/v2/api/cloud">
+<label>API base</label><input id="api" value="https://api.sandbox.softpay.io/api-gateway/v3/api/cloud">
 <label>Action</label><input id="action" value="PAYMENT">
 <label>Target package</label><input id="pkg" value="io.softpay.integrationtest">
 </details>
@@ -43,6 +43,6 @@
 
 <script src="https://assets.softpay.io/cloudswitch/softpay-client/softpay-client-1.6.js"
         integrity="sha384-nkWJjBdISbcVxp/HMOJ618fRVpdr/xf4wTMxR1OSRtvlsuYhdW8Q6nV8cFfJIjxY" crossorigin="anonymous"></script>
-<script src="app.js"></script>
+<script src="app.js?v=4"></script>
 </body>
 </html>

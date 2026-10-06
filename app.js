@@ -77,7 +77,7 @@ $('pay').addEventListener('click', async () => {
       appId: $('appid').value.trim(),
       amount: parseInt($('amount').value, 10),
       currencyCode: $('cur').value.trim(),
-      options: { suppressAppNotification: true },
+      options: { receipt: 'LOCAL', cardHolderLocale: 'en', suppressAppNotification: true },
     });
     try { localStorage.setItem('sp_last', created.requestId); } catch (e) {}
     pending = created.requestId;
@@ -88,10 +88,51 @@ $('pay').addEventListener('click', async () => {
 });
 
 $('getapp').addEventListener('click', () => { makeClient(); client.processAppId(); });
-$('check').addEventListener('click', () => check());
-$('merchants').addEventListener('click', async () => {
-  try { log(['merchants', await api('GET', '/merchants', null, true)]); }
-  catch (e) { log('merchants failed: ' + e.message); }
+$('check').addEventListener('click', () => check($('reqid').value.trim() || undefined));
+// Authorize: get a token with the typed client id/secret, then replace the merchant text field with a dropdown.
+async function loadMerchants() {
+  const all = [];
+  let page = 0, pages = 1;
+  while (page < pages && page < 20) {
+    const r = await api('GET', '/merchants' + (page ? '?page=' + page : ''), null, true);
+    all.push(...(r.content || []));
+    pages = (r.page && r.page.totalPages) || 1; page++;
+  }
+  return all;
+}
+$('auth').addEventListener('click', async () => {
+  try {
+    token = null;                                  // force a fresh token
+    $('auth').disabled = true;
+    await bearer();
+    const merchants = await loadMerchants();
+    log('authorized, ' + merchants.length + ' merchant(s)');
+    const sel = $('mrefsel'), saved = $('mref').value.trim();
+    sel.innerHTML = '';
+    for (const m of merchants) {
+      const o = document.createElement('option');
+      o.value = m.merchantReference; o.textContent = m.name + ' (' + m.merchantReference.slice(0, 8) + ')';
+      sel.appendChild(o);
+    }
+    if (!merchants.length) { log('no merchants for this client'); return; }
+    if (merchants.some(m => m.merchantReference === saved)) sel.value = saved;
+    $('mref').value = sel.value;
+    try { localStorage.setItem('sp_mref', sel.value); } catch (e) {}
+    $('mref').hidden = true; sel.hidden = false;
+    $('auth').textContent = 'Authorized, tap to re-authorize';
+  } catch (e) {
+    token = null; $('mref').hidden = false; $('mrefsel').hidden = true;
+    $('auth').textContent = 'Authorize';
+    log('authorize failed: ' + e.message);
+  } finally { $('auth').disabled = false; }
+});
+$('mrefsel').addEventListener('change', () => {
+  $('mref').value = $('mrefsel').value;
+  try { localStorage.setItem('sp_mref', $('mref').value); } catch (e) {}
+});
+// New credentials mean a new authorization: drop the token and show the plain field again.
+for (const f of ['cid', 'sec', 'authurl']) $(f).addEventListener('input', () => {
+  token = null; $('mref').hidden = false; $('mrefsel').hidden = true; $('auth').textContent = 'Authorize';
 });
 $('terminals').addEventListener('click', async () => {
   try {
@@ -106,7 +147,7 @@ $('stores').addEventListener('click', async () => {
   catch (e) { log('stores failed: ' + e.message); }
 });
 
-window.addEventListener('load', () => { makeClient(); log('ready, build 9, client v' + Softpay.version.major + '.' + Softpay.version.minor); });
+window.addEventListener('load', () => { makeClient(); log('ready, build 12, client v' + Softpay.version.major + '.' + Softpay.version.minor); });
 // Show app id when the app returns it.
 window.addEventListener('hashchange', () => log('callback: ' + location.hash));
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});

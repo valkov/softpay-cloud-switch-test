@@ -4,7 +4,7 @@ const logEl = $('softpay_log');
 const log = m => { logEl.textContent += (typeof m === 'string' ? m : JSON.stringify(m)) + '\n'; };
 
 // Inputs are remembered in localStorage on this device only (never in the repo).
-const FIELDS = ['cid', 'sec', 'mref', 'appid', 'amount', 'cur', 'authurl', 'api', 'action', 'pkg'];
+const FIELDS = ['cid', 'sec', 'mref', 'appid', 'amount', 'cur', 'authurl', 'api', 'pkg'];
 for (const f of FIELDS) {
   try { const v = localStorage.getItem('sp_' + f); if (v) $(f).value = v; } catch (e) {}
   $(f).addEventListener('input', () => { try { localStorage.setItem('sp_' + f, $(f).value); } catch (e) {} });
@@ -50,6 +50,7 @@ async function api(method, path, body) {
 }
 
 async function check(id) {
+  if (!id && !last()) { log('no transaction created yet'); return; }
   try { log(['transaction', await api('GET', '/transactions/' + (id || last()))]); }
   catch (e) { log('check failed: ' + e.message); }
 }
@@ -70,6 +71,7 @@ $('pay').addEventListener('click', async () => {
     $('pay').disabled = true;
     const created = await api('POST', '/transactions', { action: $('action').value.trim() });
     log(['created', created]);
+    try { localStorage.setItem('sp_last', created.requestId); } catch (e) {}
     await api('PUT', '/transactions/' + created.requestId, {
       appId: $('appid').value.trim(),
       amount: parseInt($('amount').value, 10),
@@ -86,6 +88,10 @@ $('pay').addEventListener('click', async () => {
 
 $('getapp').addEventListener('click', () => { makeClient(); client.processAppId(); });
 $('check').addEventListener('click', () => check());
+$('stores').addEventListener('click', async () => {
+  try { log(['stores', await api('GET', '/stores')]); }
+  catch (e) { log('stores failed: ' + e.message); }
+});
 
 window.addEventListener('load', () => { makeClient(); log('ready, client v' + Softpay.version.major + '.' + Softpay.version.minor); });
 // Show app id when the app returns it.

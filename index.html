@@ -32,12 +32,13 @@
 <details><summary>Advanced</summary>
 <label>Auth URL</label><input id="authurl" value="https://auth.sandbox.softpay.io/oauth2/token">
 <label>API base</label><input id="api" value="https://api.sandbox.softpay.io/api-gateway/v2/api/cloud">
-<label>Action</label><input id="action" value="PURCHASE">
+<label>Action</label><input id="action" value="PAYMENT">
 <label>Target package</label><input id="pkg" value="io.softpay.integrationtest">
 </details>
 
 <button id="pay" type="button">Create transaction and switch</button>
 <button id="check" type="button">Check last transaction</button>
+<button id="stores" type="button">List stores and app ids visible to these credentials</button>
 <pre id="softpay_log"></pre>
 
 <script src="https://assets.softpay.io/cloudswitch/softpay-client/softpay-client-1.6.js"
